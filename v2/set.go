@@ -43,10 +43,14 @@ type Set struct {
 
 	usage func() // usage should print the programs usage and exit.
 
-	shortOptions map[rune]*option
-	longOptions  map[string]*option
-	options      optionList
+	shortOptions   map[rune]*option
+	longOptions    map[string]*option
+	options        optionList
 	requiredGroups []string
+
+	// anyOrder specifies whether to continue parsing options after
+	// encountering a non-option.
+	anyOrder bool
 }
 
 // New returns a newly created option set.
@@ -92,6 +96,10 @@ func Parse() { CommandLine.Parse(os.Args) }
 
 // Same as parse but not found in version 1 of getopt.
 func ParseV2() { CommandLine.Parse(os.Args) }
+
+// AllowAnyOrder controls whether options are allowed to occur after non-option
+// arguments.
+func AllowAnyOrder(allow bool) { CommandLine.AllowAnyOrder(allow) }
 
 // Getops returns the result of calling Getop in the default option set with the
 // command line arguments found in os.Args.  The fn function, which may be nil,
@@ -165,6 +173,12 @@ func (s *Set) SetProgram(program string) {
 
 // Program returns the program name associated with Set s.
 func (s *Set) Program() string { return s.program }
+
+// AllowAnyOrder controls whether options are allowed after non-option
+// aarguments.
+func (s *Set) AllowAnyOrder(allow bool) {
+	s.anyOrder = allow
+}
 
 // SetUsage sets the function used by Parse to display the commands usage
 // on error.  It defaults to calling PrintUsage(os.Stderr).

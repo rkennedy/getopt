@@ -495,6 +495,7 @@ func (s *Set) Getopt(args []string, fn func(Option) bool) (err error) {
 		s.program = path.Base(args[0])
 	}
 	args = args[1:]
+	remaining := []string{}
 Parsing:
 	for len(args) > 0 {
 		arg := args[0]
@@ -503,8 +504,12 @@ Parsing:
 
 		// end of options?
 		if arg == "" || arg[0] != '-' {
-			s.setState(EndOfOptions)
-			return nil
+			if !s.anyOrder {
+				s.setState(EndOfOptions)
+				return nil
+			}
+			remaining = append(remaining, arg)
+			continue
 		}
 
 		if arg == "-" {
@@ -513,7 +518,7 @@ Parsing:
 
 		// explicitly request end of options?
 		if arg == "--" {
-			s.args = args
+			s.args = append(remaining, args...)
 			s.setState(DashDash)
 			return nil
 		}
@@ -599,7 +604,7 @@ Parsing:
 			}
 		}
 	}
-	s.args = []string{}
+	s.args = remaining
 	return nil
 }
 

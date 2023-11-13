@@ -5,8 +5,54 @@
 package getopt
 
 import (
+	"slices"
 	"testing"
 )
+
+func TestAnyOrder(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		in        []string
+		anyOrder  bool
+		err       string
+		remaining []string
+	}{
+		{
+			name:      "allow any order",
+			in:        []string{"test", "-a", "arg", "-b"},
+			anyOrder:  true,
+			err:       "",
+			remaining: []string{"arg"},
+		},
+		{
+			name:      "disallow any order",
+			in:        []string{"test", "-a", "arg", "-b"},
+			anyOrder:  false,
+			err:       "test: option -b is mandatory",
+			remaining: []string{"arg", "-b"},
+		},
+		{
+			name:      "exclude dash-dash",
+			in:        []string{"test", "-a", "--", "arg", "-b"},
+			anyOrder:  true,
+			err:       "test: option -b is mandatory",
+			remaining: []string{"arg", "-b"},
+		},
+	} {
+		reset()
+		AllowAnyOrder(tt.anyOrder)
+		var vala, valb bool
+		Flag(&vala, 'a')
+		Flag(&valb, 'b').Mandatory()
+		parse(tt.in)
+		if s := checkError(tt.err); s != "" {
+			t.Errorf("%s: %s", tt.name, s)
+		}
+		if !slices.Equal(tt.remaining, Args()) {
+			t.Errorf("%s: expected %+v but got %+v", tt.name, tt.remaining, Args())
+		}
+	}
+}
 
 func TestMandatory(t *testing.T) {
 	for _, tt := range []struct {
